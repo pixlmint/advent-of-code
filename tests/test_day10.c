@@ -12,11 +12,9 @@ static void test_read_map(void **state) {
     
     PathMatrix *mat = read_map(file);
 
-    fclose(file);
-
-    print_path_matrix(mat);
-
     free_path_matrix(mat);
+
+    fclose(file);
 }
 
 static void test_get_start_nodes(void **state) {
@@ -26,14 +24,12 @@ static void test_get_start_nodes(void **state) {
 
     fclose(file);
 
-    NodeList **nodes = get_nodes(mat);
-    NodeList *start_nodes = nodes[0];
+    NodeList *start_nodes = get_nodes(mat);
 
     assert_int_equal(start_nodes->length, 9);
 
     free_path_matrix(mat);
-    free(start_nodes);
-    free(nodes);
+    free_node_list(start_nodes);
 }
 
 static void test_get_nodes_simple(void **state) {
@@ -43,19 +39,15 @@ static void test_get_nodes_simple(void **state) {
         mat->nodes[0][i] = node;
     }
 
-    print_path_matrix(mat);
-
-    NodeList **nodes = get_nodes(mat);
-    NodeList *start_nodes = nodes[0];
+    NodeList *start_nodes = get_nodes(mat);
 
     assert_int_equal(start_nodes->length, 1);
 
-    int count = count_paths(start_nodes, mat);
+    int count = count_paths(start_nodes, mat, true);
     assert_int_equal(count, 1);
 
     free_path_matrix(mat);
-    free(start_nodes);
-    free(nodes);
+    free_node_list(start_nodes);
 }
 
 static void test_count_paths(void **state) {
@@ -65,16 +57,13 @@ static void test_count_paths(void **state) {
 
     fclose(file);
 
-    NodeList **nodes = get_nodes(mat);
-    NodeList *start_nodes = nodes[0];
+    NodeList *start_nodes = get_nodes(mat);
 
-    int count = count_paths(start_nodes, mat);
-    printf("Count: %d\n", count);
+    int count = count_paths(start_nodes, mat, true);
     assert_int_equal(count, 36);
 
     free_path_matrix(mat);
-    free(start_nodes);
-    free(nodes);
+    free_node_list(start_nodes);
 }
 
 int main() {

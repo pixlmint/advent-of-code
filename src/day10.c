@@ -41,18 +41,17 @@ PathMatrix *read_map(FILE *file) {
     int rows = count_lines(file);
     int cols = count_columns(file);
 
-    // IntMatrix *map = init_int_matrix(rows, cols);
     PathMatrix *p_map = init_path_matrix(rows, cols);
     char *line = malloc(sizeof(char) * cols + 2);
 
     for (int i = 0; i < rows; i++) {
         fgets(line, cols + 2, file);
         for (int j = 0; j < cols; j++) {
-            // map->data[i][j] = char_to_int(line[j]);
             PathNode *node = create_node(char_to_int(line[j]));
             p_map->nodes[i][j] = node;
         }
     }
+    free(line);
 
     return p_map;
 }
@@ -86,6 +85,14 @@ NodeList *init_node_list(int length) {
     return list;
 }
 
+void free_node_list(NodeList *nl) {
+    /*for (int i = 0; i < nl->length; i++) {*/
+    /*    free(nl->nodes[i]);*/
+    /*}*/
+    free(nl->nodes);
+    free(nl);
+}
+
 void free_path_matrix(PathMatrix *mat) {
     for (int i = 0; i < mat->rows; i++) {
         for (int j = 0; j < mat->cols; j++) {
@@ -97,16 +104,13 @@ void free_path_matrix(PathMatrix *mat) {
     free(mat);
 }
 
-NodeList **get_nodes(PathMatrix *map) {
+NodeList *get_nodes(PathMatrix *map) {
     NodeList *start_nodes = init_node_list(10);
-    NodeList *end_nodes = init_node_list(10);
     for (int i = 0; i < map->rows; i++) {
         for (int j = 0; j < map->cols; j++) {
             PathNode *cur = map->nodes[i][j];
             if (cur->value == 0) {
                 append_node(start_nodes, cur);
-            } else if (cur->value == 9) {
-                append_node(end_nodes, cur);
             }
             if (i > 0) {
                 PathNode *top = map->nodes[i - 1][j];
@@ -135,39 +139,36 @@ NodeList **get_nodes(PathMatrix *map) {
         }
     }
 
-    NodeList **ret = malloc(sizeof(int*) * 2);
-    ret[0] = start_nodes;
-    ret[1] = end_nodes;
-
-    return ret;
+    return start_nodes;
 }
 
-void get_paths(PathNode *from, NodeList *targets) {
+void get_paths(PathNode *from, NodeList *targets, bool only_unique) {
     if (from->value == 9) {
-        // if (node_list_index_of(targets, from) == -1) {
+        if (node_list_index_of(targets, from) == -1 || !only_unique) {
             append_node(targets, from);
-        // }
+        }
     }
     if (from->left != NULL) {
-        get_paths(from->left, targets);
+        get_paths(from->left, targets, only_unique);
     } 
     if (from->right != NULL) {
-        get_paths(from->right, targets);
+        get_paths(from->right, targets, only_unique);
     } 
     if (from->bot != NULL) {
-        get_paths(from->bot, targets);
+        get_paths(from->bot, targets, only_unique);
     } 
     if (from->top != NULL) {
-        get_paths(from->top, targets);
+        get_paths(from->top, targets, only_unique);
     } 
 }
 
-int count_paths(NodeList *start_nodes, PathMatrix *map) {
+int count_paths(NodeList *start_nodes, PathMatrix *map, bool only_unique) {
     int count = 0;
     for (int i = 0; i < start_nodes->length; i++) {
         NodeList *end_nodes = init_node_list(5);
-        get_paths(start_nodes->nodes[i], end_nodes);
+        get_paths(start_nodes->nodes[i], end_nodes, only_unique);
         count += end_nodes->length;
+        free_node_list(end_nodes);
     }
     return count;
 }
@@ -184,15 +185,24 @@ int solve_day10(const char *input) {
     fclose(file);
 
     int t_main = timer_start("Main", perf);
-    NodeList **nodes = get_nodes(mat);
-    NodeList *start_nodes = nodes[0];
+    NodeList *start_nodes = get_nodes(mat);
+    int t_1 = timer_start("Part 1", perf);
+    int count1 = count_paths(start_nodes, mat, true);
+    timer_stop(t_1, perf);
 
-    int count = count_paths(start_nodes, mat);
+    int t_2 = timer_start("Part 2", perf);
+    int count2 = count_paths(start_nodes, mat, false);
+
+    timer_stop(t_2, perf);
     timer_stop(t_main, perf);
-    printf("Count: %d\n", count);
+    printf("Part 1: %d\n", count1);
+    printf("Part 2: %d\n", count2);
 
     perf_report(perf);
     perf_close(perf);
+
+    free_path_matrix(mat);
+    free_node_list(start_nodes);
 
     return 0;
 }
