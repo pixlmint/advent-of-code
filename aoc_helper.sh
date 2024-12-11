@@ -88,7 +88,7 @@ EOF
         echo "File already exists: $input_file"
     fi
 
-    bear --append -- gcc -o "$BINDIR/day$day" "$day_src" "$test_file" "$TEST_DIR/framework.h" -I"$SRC_DIR" "$sources" -I"$LIB_DIR" -lcmocka
+    bear --append -- gcc -o "$BINDIR/day$day" "$day_src" "$test_file" "$TEST_DIR/framework.h" -I"$SRC_DIR" "$sources" -I"$LIB_DIR" -lcmocka -lm
 }
 
 run_tests() {
@@ -105,7 +105,7 @@ run_tests() {
         fi
 
         echo "Running test: $test_name"
-        bear -- gcc -o "$BINDIR/$test_name" "$test_file" "$day_src" -I"$SRC_DIR" -I"$LIB_DIR" $LIB_DIR/*.c -lcmocka && "$BINDIR/$test_name"
+        bear -- gcc -lpthread -DSUPPRESS_PRINTS -o "$BINDIR/$test_name" "$test_file" "$day_src" -I"$SRC_DIR" -I"$LIB_DIR" $LIB_DIR/*.c -lcmocka -lm && "$BINDIR/$test_name"
     done
 }
 
@@ -131,7 +131,7 @@ debug_test() {
     fi
 
     echo "Compiling with debug symbols..."
-    bear -- gcc -g -O0 -o "$output_bin" "$test_file" "$day_src" -I"$SRC_DIR" -I"$LIB_DIR" $LIB_DIR/*.c -lcmocka
+    bear -- gcc -lpthread -g -O0 -DSUPPRESS_PRINTS -o "$output_bin" "$test_file" "$day_src" -I"$SRC_DIR" -I"$LIB_DIR" $LIB_DIR/*.c -lcmocka -lm
 
     if [[ $? -eq 0 ]]; then
         echo "Starting GDB..."
@@ -159,7 +159,7 @@ valgrind_test() {
     fi
 
     echo "Compiling with debug symbols..."
-    bear -- gcc -g -O0 -o "$output_bin" "$test_file" "$day_src" -I"$SRC_DIR" -I"$LIB_DIR" $LIB_DIR/*.c -lcmocka
+    bear -- gcc -lpthread -g -O0 -DSUPPRESS_PRINTS -o "$output_bin" "$test_file" "$day_src" -I"$SRC_DIR" -I"$LIB_DIR" $LIB_DIR/*.c -lcmocka -lm
 
     if [[ $? -eq 0 ]]; then
         echo "Running Valgrind..."
@@ -173,6 +173,64 @@ valgrind_test() {
         echo "Compilation failed."
         return 1
     fi
+}
+
+run_program_valgrind() {
+    read -p "Enter day number: " day
+    day=$(printf "%02d" $day) # Pad to two digits (e.g., 01, 02)
+
+    mkdir -p "$BINDIR"
+
+    day_src="$SRC_DIR/day${day}.c"
+    day_hdr="day${day}.h"
+    input_file="$INPUT_DIR/day${day}.txt"
+    output_bin="$BINDIR/day${day}"
+    temp_main="$BINDIR/main_day${day}.c"
+    sources=$(find "$LIB_DIR" -name "*.c" -type f | tr '\n' ' ' | sed 's/[[:space:]]*$//')
+
+    if [[ ! -f $day_src ]]; then
+        echo "Source file for Day $day not found: $day_src"
+        return
+    fi
+
+    if [[ ! -f "$SRC_DIR/$day_hdr" ]]; then
+        echo "Header file for Day $day not found: $SRC_DIR/$day_hdr"
+        return
+    fi
+
+    if [[ ! -f $input_file ]]; then
+        echo "Input file for Day $day not found: $input_file"
+        return
+    fi
+
+    # Create a temporary main file
+    cat > "$temp_main" <<EOF
+#include "${day_hdr}"
+
+int main() {
+    const char *input = "$input_file";
+    return solve_day${day}(input);
+}
+EOF
+
+    # Compile and run the program
+    # cmd=
+    # echo "Running compile command\n$cmd"
+    bear -- gcc -lpthread -g -O0 -o "$output_bin" "$temp_main" "$day_src" -I"$SRC_DIR" -I"$LIB_DIR" -lm $sources
+    if [[ $? -eq 0 ]]; then
+        echo "Running Day $day..."
+        valgrind --leak-check=full \
+                 --show-leak-kinds=all \
+                 --track-origins=yes \
+                 --log-file="$BINDIR/valgrind_day${day}_run.log" \
+                 "$output_bin"
+        echo "Valgrind log saved to: $BINDIR/valgrind_day${day}_run.log"
+    else
+        echo "Compilation failed for Day $day."
+    fi
+
+    # Cleanup temporary main file
+    rm -f "$temp_main"
 }
 
 run_program() {
@@ -216,7 +274,7 @@ EOF
     # Compile and run the program
     # cmd=
     # echo "Running compile command\n$cmd"
-    bear -- gcc -g -O0 -o "$output_bin" "$temp_main" "$day_src" -I"$SRC_DIR" -I"$LIB_DIR" $sources
+    bear -- gcc -lpthread -o "$output_bin" "$temp_main" "$day_src" -I"$SRC_DIR" -I"$LIB_DIR" -lm $sources
     if [[ $? -eq 0 ]]; then
         echo "Running Day $day..."
         "$output_bin"
@@ -240,6 +298,9 @@ case $1 in
         ;;
     run)
         run_program
+        ;;
+    valgrind_run)
+        run_program_valgrind
         ;;
     valgrind)
         valgrind_test

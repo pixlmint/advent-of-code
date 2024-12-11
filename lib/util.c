@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <sys/types.h>
 #include "aoc.h"
 
 
@@ -133,5 +134,16 @@ void sort_integer_array(int* arr, int arr_size) {
         }
         arr[j] = i_val;
     }
+}
+
+u_long hash(char *str) {
+    u_long hash = 5381;
+    int c;
+
+    while ((c = *str++)) {
+        hash = ((hash << 5) + hash) + c;
+    }
+
+    return hash;
 }
 

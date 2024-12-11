@@ -2,8 +2,28 @@
 #define AOC
 #include <stdbool.h>
 #include <stdio.h>
+#include <sys/types.h>
 #include <time.h>
 
+
+// ------------- Hash Map -----------------------------------------
+typedef struct HashMap {
+    int length;
+    int max_length;
+    unsigned int *map_state;
+    char **keys;
+    void **values;
+} HashMap;
+
+HashMap *init_map(int length);
+void map_put(HashMap *map, char *key, void *value);
+void *map_get(HashMap *map, char *key);
+bool map_has(HashMap *map, char *key);
+void map_remove(HashMap *map, char *key);
+long map_long_get(HashMap *map, char *key);
+void map_long_put(HashMap *map, char *key, long value);
+void free_map(HashMap *map);
+void print_map(HashMap *map);
 
 // ------------- Int Array ----------------------------------------
 typedef struct IntArray {
@@ -82,6 +102,7 @@ int gcd(int a, int b);
 bool is_numeric(char character);
 int char_to_int(char character);
 int int_to_char(int number);
+u_long hash(char *str);
 
 
 // ------------- Perf -----------------------------------------
