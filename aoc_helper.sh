@@ -82,7 +82,7 @@ EOF
 
     # Create input file
     if [[ ! -f $input_file ]]; then
-        touch "$input_file"
+        wget --load-cookies .cookies -O $input_file https://adventofcode.com/2024/day/$day/input
         echo "Created: $input_file"
     else
         echo "File already exists: $input_file"
