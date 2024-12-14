@@ -63,50 +63,49 @@ long calculate_price_fences(AreaList *list) {
     return price;
 }
 
-void count_sides_recursive(Area *area, IntMatrix *map, IntMatrix *visited, int cur_x, int cur_y, int offset_x, int offset_y) {
-    int new_x = cur_x + offset_x;
-    int new_y = cur_y + offset_y;
-    visited->data[new_y][new_x] = 1;
+void count_sides_recursive(Area *area, IntMatrix *map, IntMatrix *visited, int cur_x, int cur_y) {
+    visited->data[cur_y + 1][cur_x + 1] = 1;
+    
+    // Check all adjacent positions
+    int directions[4][2] = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}}; // right, down, left, up
+    
+    for (int i = 0; i < 4; i++) {
+        int next_x = cur_x + directions[i][0];
+        int next_y = cur_y + directions[i][1];
+        char next_char = get_character(map, next_y, next_x);
+        
+        // printf("next_x = %d, next_y = %d\n", next_x, next_y);
+        // If we find our shape's character, count it as a side
+        if (next_char == area->identifier) {
+            area->num_sides++;
+            
+            // Look for the next position to move to
+            for (int j = 0; j < 4; j++) {
+                if (j != (i + 2) % 4) {  // Don't go backwards
+                    int try_x = cur_x + directions[j][0];
+                    int try_y = cur_y + directions[j][1];
+                    char try_char = get_character(map, try_y, try_x);
+                    
+                    // Move to any position that isn't our shape's character and hasn't been visited
+                    if (try_char != area->identifier && visited->data[try_y + 1][try_x + 1] != 1) {
+                        count_sides_recursive(area, map, visited, try_x, try_y);
+                        // return;  // Exit after finding next move
+                    }
+                }
+            }
+        }
+        // If the next position isn't our character and hasn't been visited, we can move there
+        else if (next_y >= 0 && next_x >= 0 && next_y < map->rows && next_x < map->cols && visited->data[next_y + 1][next_x + 1] != 1) {
+            for (int j = 0; j < 4; j++) {
+                if (j != (i + 2) % 4) {
+                    int neightbor_x = next_x + directions[j][0];
+                    int neighbor_y = next_y + directions[j][1];
 
-    if (new_x == area->start_x && new_y == area->start_y) {
-        return;
-    } else {
-        int next_x = new_x + offset_x;
-        int next_y = new_y + offset_y;
-
-        if (get_character(map, next_y, next_x) == area->identifier && visited->data[next_y][next_x] != 1) {
-            count_sides_recursive(area, map, visited, new_x, new_y, offset_x, offset_y);
-        }
-        if (offset_y != 1 && get_character(map, new_y + 1, new_x) == area->identifier && visited->data[new_y + 1][new_x] != 1) {
-            area->num_sides++;
-            int next_offset_y = 1;
-            int next_offset_x = 0;
-            if (next_offset_y != area->start_y && next_offset_x != area->start_x) {
-                count_sides_recursive(area, map, visited, new_x, new_y, next_offset_x, next_offset_y);
-            }
-        }
-        if (offset_y != -1 && get_character(map, new_y - 1, new_x) == area->identifier && visited->data[new_y - 1][new_x] != 1) {
-            area->num_sides++;
-            int next_offset_y = -1;
-            int next_offset_x = 0;
-            if (next_offset_y != area->start_y && next_offset_x != area->start_x) {
-                count_sides_recursive(area, map, visited, new_x, new_y, next_offset_x, next_offset_y);
-            }
-        }
-        if (offset_x != 1 && get_character(map, new_y, new_x + 1) == area->identifier && visited->data[new_y][new_x + 1] != 1) {
-            area->num_sides++;
-            int next_offset_y = 0;
-            int next_offset_x = 1;
-            if (next_offset_y != area->start_y && next_offset_x != area->start_x) {
-                count_sides_recursive(area, map, visited, new_x, new_y, next_offset_x, next_offset_y);
-            }
-        }
-        if (offset_x != -1 && get_character(map, new_y, new_x - 1) == area->identifier && visited->data[new_y][new_x - 1] != 1) {
-            area->num_sides++;
-            int next_offset_y = 0;
-            int next_offset_x = -1;
-            if (!(next_offset_y == area->start_y && next_offset_x == area->start_x)) {
-                count_sides_recursive(area, map, visited, new_x, new_y, next_offset_x, next_offset_y);
+                    if (get_character(map, neighbor_y, neightbor_x) == area->identifier) {
+                        count_sides_recursive(area, map, visited, next_x, next_y);
+                        return;  // Exit after moving
+                    }
+                }
             }
         }
     }
@@ -115,31 +114,34 @@ void count_sides_recursive(Area *area, IntMatrix *map, IntMatrix *visited, int c
 void count_sides(Area *area, IntMatrix *map) {
     if (area->area_size <= 2) {
         area->num_sides = 4;
-    } else {
-        IntMatrix *visited = init_int_matrix(map->rows, map->cols);
-        for (int i = 0; i < map->rows; i++) {
-            for (int j = 0; j < map->cols; j++) {
-                visited->data[i][j] = 0;
-            }
-        }
-        visited->data[area->start_y][area->start_x] = 1;
-        area->num_sides = 1;
-        if (get_character(map, area->start_y + 1, area->start_x) == area->identifier) {
-            count_sides_recursive(area, map, visited, area->start_x, area->start_y, 0, 1);
-        }
-        if (get_character(map, area->start_y - 1, area->start_x) == area->identifier) {
-            count_sides_recursive(area, map, visited, area->start_x, area->start_y, 0, -1);
-        }
-        if (get_character(map, area->start_y, area->start_x + 1) == area->identifier) {
-            count_sides_recursive(area, map, visited, area->start_x, area->start_y, 1, 0);
-        }
-        if (get_character(map, area->start_y, area->start_x - 1) == area->identifier) {
-            count_sides_recursive(area, map, visited, area->start_x, area->start_y, -1, 0);
-        }
-        printf("Visited for %c\n", area->identifier);
-        print_matrix(visited);
-        free_matrix(visited);
+        return;
     }
+    
+    // Initialize visited matrix
+    IntMatrix *visited = init_int_matrix(map->rows + 2, map->cols + 2);
+    for (int i = 0; i < visited->rows; i++) {
+        for (int j = 0; j < visited->cols; j++) {
+            visited->data[i][j] = 0;
+        }
+    }
+    
+    area->num_sides = 0;
+    
+    // Find an empty space adjacent to our starting position
+    int directions[4][2] = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}};
+    for (int i = 0; i < 4; i++) {
+        int start_x = area->start_x + directions[i][0];
+        int start_y = area->start_y + directions[i][1];
+        
+        if (get_character(map, start_y, start_x) != area->identifier) {
+            count_sides_recursive(area, map, visited, start_x, start_y);
+            break;
+        }
+    }
+    
+    printf("Visited for %c\n", area->identifier);
+    print_matrix(visited);
+    free_matrix(visited);
 }
 
 long calculate_price_sides(AreaList *list) {
