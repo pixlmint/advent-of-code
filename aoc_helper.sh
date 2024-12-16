@@ -39,7 +39,6 @@ EOF
         cat > "$day_src" <<EOF
 #include <stdlib.h>
 #include <stdio.h>
-#include "aoc.h"
 #include "day${day}.h"
 
 int solve_day${day}(const char *input) {
@@ -272,8 +271,8 @@ int main() {
 EOF
 
     # Compile and run the program
-    # cmd=
     # echo "Running compile command\n$cmd"
+    echo "gcc -lpthread -o \"$output_bin\" \"$temp_main\" \"$day_src\" -I\"$SRC_DIR\" -I\"$LIB_DIR\" -lm $sources"
     bear -- gcc -lpthread -o "$output_bin" "$temp_main" "$day_src" -I"$SRC_DIR" -I"$LIB_DIR" -lm $sources
     if [[ $? -eq 0 ]]; then
         echo "Running Day $day..."

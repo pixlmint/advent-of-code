@@ -163,6 +163,18 @@ int point_array_index_of(PointArray *arr, Point *search) {
     return -1;
 }
 
+PointArray *point_array_clone(PointArray *orig) {
+    PointArray *new = init_point_array(orig->max_length);
+    for (int i = 0; i < orig->length; i++) {
+        Point *np = malloc(sizeof(Point));
+        np->x = orig->points[i]->x;
+        np->y = orig->points[i]->y;
+        new->points[i] = np;
+    }
+
+    return new;
+}
+
 PointArray *point_array_merge(PointArray *a, PointArray *b) {
     PointArray *merged = init_point_array(a->length + b->length);
 
@@ -272,9 +284,9 @@ void print_matrix(IntMatrix *matrix) {
 
 void print_matrix_as_char(IntMatrix *matrix) {
     for (int i = 0; i < matrix->rows; i++) {
-        printf("| ");
+        // printf("| ");
         for (int j = 0; j < matrix->cols; j++) {
-            printf("%c | ", matrix->data[i][j]);
+            printf("%c", matrix->data[i][j]);
         }
         printf("\n");
     }

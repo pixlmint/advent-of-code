@@ -86,6 +86,7 @@ int append_coords(PointArray *arr, double x, double y);
 int point_array_index_of(PointArray *arr, Point *search);
 void free_point_array(PointArray *arr);
 PointArray *point_array_merge(PointArray *a, PointArray *b);
+PointArray *point_array_clone(PointArray *orig);
 
 
 // ------------- File Handling ----------------------------------
