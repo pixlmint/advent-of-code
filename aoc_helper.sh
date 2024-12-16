@@ -37,13 +37,13 @@ EOF
     # Create .c file
     if [[ ! -f $day_src ]]; then
         cat > "$day_src" <<EOF
+#include <stdlib.h>
 #include <stdio.h>
+#include "aoc.h"
 #include "day${day}.h"
 
 int solve_day${day}(const char *input) {
-    // TODO: Implement solution for Day ${day}
-    printf("Input for Day ${day}: %s\\n", input);
-    return 0; // Example solution
+    return 0;
 }
 EOF
         echo "Created: $day_src"
