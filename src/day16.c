@@ -5,6 +5,8 @@
 #include "day16.h"
 #include "aoc.h"
 
+// TODO: optimize by actually only walking each path section once
+//       if the new score is expected to be equal or lower
 
 /*
 ----------------------------
