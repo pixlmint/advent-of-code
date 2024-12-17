@@ -5,6 +5,15 @@
 #include "day16.h"
 #include "aoc.h"
 
+
+/*
+----------------------------
+Search Paths: 47.5  s
+Count Tiles:  42.41 ms
+Total:        47.5  s
+----------------------------
+*/
+
 void **read_map(FILE *file) {
     int rows = count_lines(file);
     int cols = count_columns(file);
@@ -79,16 +88,19 @@ void free_path_tree(PathNode* node) {
     free(node);
 }
 
-void insert_path(IntMatrix *map, PathNode *node) {
-    map->data[node->y][node->x] = '!';
+void insert_path(IntMatrix *map, PathNode *node, int min_score) {
+    if (get_lowest_score(node) > min_score) {
+        return;
+    }
+    map->data[node->y][node->x] = map->data[node->y][node->x]+ '!';
     if (node->l != NULL && node->l->reaches_target) {
-        insert_path(map, node->l);
+        insert_path(map, node->l, min_score);
     }
     if (node->r != NULL && node->r->reaches_target) {
-        insert_path(map, node->r);
+        insert_path(map, node->r, min_score);
     }
     if (node->o != NULL && node->o->reaches_target) {
-        insert_path(map, node->o);
+        insert_path(map, node->o, min_score);
     }
 }
 
@@ -102,7 +114,9 @@ void print_path(IntMatrix *map, PathNode *root) {
             }
         }
     }
-    insert_path(clone, root);
+
+    int score = get_lowest_score(root);
+    insert_path(clone, root, score);
 
     print_matrix_as_char(clone);
     free_matrix(clone);
@@ -123,7 +137,6 @@ PathNode *find_path(IntMatrix *map, IntMatrix *visited, PathNode *previous, Poin
 
     if (previous_visit + 1000 < current_score && previous_visit != 0) {
         // Were already here with lower score
-        // current->value = INT_MAX;
         return current;
     } 
     if (target->x == current->x && target->y == current->y) {
@@ -133,14 +146,12 @@ PathNode *find_path(IntMatrix *map, IntMatrix *visited, PathNode *previous, Poin
         return current;
     } else if (current_score >= *lowest_score) {
         // Already bigger than lowest score
-        // current->value = INT_MAX;
         return current;
     } else if (cur == -1) {
         // current->value = INT_MAX;
         return current;
     } else if (find_parent_node(previous, current->x, current->y) != NULL && previous->x != current->x && previous->y != current->y) {
         // We were already here in the current path
-        // current->value = INT_MAX;
         return current;
     } else if (cur == '#') {
         current->value = INT_MAX;
@@ -178,6 +189,38 @@ PathNode *find_path(IntMatrix *map, IntMatrix *visited, PathNode *previous, Poin
     return current;
 }
 
+void get_tiles_in_path(PathNode *node, int min_score, PointArray *path_tiles) {
+    if (node == NULL || !node->reaches_target  || get_lowest_score(node) > min_score) {
+        return;
+    }
+    Point *p = malloc(sizeof(Point));
+    p->x = node->x;
+    p->y = node->y;
+    if (point_array_index_of(path_tiles, p) != -1) {
+        free(p);
+        return;
+    }
+
+    point_array_append(path_tiles, p);
+    free(p);
+
+    get_tiles_in_path(node->l, min_score, path_tiles);
+    get_tiles_in_path(node->r, min_score, path_tiles);
+    get_tiles_in_path(node->o, min_score, path_tiles);
+}
+
+int count_path_tiles(PathNode *root) {
+    int score = get_lowest_score(root);
+
+    PointArray *nodes = init_point_array(10);
+
+    get_tiles_in_path(root, score, nodes);
+
+    int count = nodes->length;
+    free_point_array(nodes);
+    return count;
+}
+
 PathNode *search_paths(FILE *file) {
     void **data = read_map(file);
     IntMatrix *map = data[0];
@@ -194,7 +237,7 @@ PathNode *search_paths(FILE *file) {
             visited->data[i][j] = 0;
         }
     }
-    
+
     int lowest_score = INT_MAX;
 
     PathNode *root = find_path(map, visited, start, dir, end, 0, &lowest_score);
@@ -234,7 +277,7 @@ int get_lowest_score(PathNode *node) {
     if ((node->l == NULL || !node->l->reaches_target) && (node->o == NULL || !node->o->reaches_target) && (node->r == NULL || !node->r->reaches_target)) {
         return node->value;
     }
-    
+
     return lowest;
 }
 
@@ -250,6 +293,11 @@ int solve_day16(const char *input) {
     int lowest_score = get_lowest_score(root);
 
     printf("Part 1: %d\n", lowest_score);
+
+    int t2 = timer_start("Count Tiles", perf);
+    int tile_count = count_path_tiles(root);
+
+    printf("Part 2: %d\n", tile_count);
 
     perf_report(perf);
     perf_close(perf);

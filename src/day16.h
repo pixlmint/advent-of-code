@@ -20,5 +20,6 @@ void free_path_tree(PathNode* node);
 void print_path(IntMatrix *map, PathNode *root);
 int get_lowest_score(PathNode *node);
 PathNode *search_paths(FILE *file);
+int count_path_tiles(PathNode *node);
 
 #endif
