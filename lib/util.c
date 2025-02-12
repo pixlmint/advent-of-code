@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -55,6 +56,24 @@ int count_lines(FILE *file) {
     fseek(file, 0, SEEK_SET);
 
     return lines;
+}
+
+int str_count_lines(char *str) {
+    int count = 0;
+
+    const size_t len = strlen(str);
+
+    for (int i = 0; i < len; i++) {
+        if (str[i] == '\n') {
+            count++;
+        }
+    }
+
+    if (str[0] != '\0' && str[strlen(str) - 1] != '\n') {
+        count++;
+    }
+
+    return count;
 }
 
 /**

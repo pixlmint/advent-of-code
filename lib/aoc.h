@@ -67,6 +67,16 @@ IntMatrix *clone_int_matrix(IntMatrix *original);
 void print_matrix(IntMatrix *matrix);
 void print_matrix_as_char(IntMatrix *matrix);
 IntArray *get_diagonal_from_matrix(IntMatrix *matrix, int row, int col);
+IntMatrix *str_to_matrix(char *str);
+
+// ------------- Tuples ------------------------------------------
+typedef struct PtrTuple {
+    void *a;
+    void *b;
+} PtrTuple;
+
+PtrTuple *init_tuple(void *a, void *b);
+
 
 // ------------- Points ------------------------------------------
 typedef struct Point {
@@ -92,6 +102,7 @@ PointArray *point_array_clone(PointArray *orig);
 // ------------- File Handling ----------------------------------
 char *read_file(const char *fp);
 int count_lines(FILE *file);
+int str_count_lines(char *str);
 int count_columns(FILE *file);
 
 

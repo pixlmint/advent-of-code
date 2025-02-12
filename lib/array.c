@@ -299,3 +299,44 @@ void free_matrix(IntMatrix *matrix) {
     free(matrix->data);
     free(matrix);
 }
+
+IntMatrix *str_to_matrix(char *str) {
+    int lines = str_count_lines(str);
+    if (lines == 0) {
+        return init_int_matrix(0, 0); // an empty string was passed
+    }
+    int cols = 0;
+    bool found_lb = false;
+    while(!found_lb) {
+        const char cur_char = str[cols];
+        if (cur_char == '\n') {
+            found_lb = true;
+        } else {
+            cols += 1;
+        }
+    }
+
+    IntMatrix *matrix = init_int_matrix(lines, cols);
+
+    const char *ptr = str;
+    int cur_row = 0;
+    int cur_col = 0;
+    while (*ptr) {
+        if (*ptr == '\n') {
+            cur_col = 0;
+            cur_row += 1;
+        } else {
+            matrix->data[cur_row][cur_col++] = *ptr;
+        }
+        ptr++;
+    }
+
+    return matrix;
+}
+
+PtrTuple *init_tuple(void *a, void *b) {
+    PtrTuple *tuple = malloc(sizeof(PtrTuple));
+    tuple->a = a;
+    tuple->b = b;
+    return tuple;
+}
