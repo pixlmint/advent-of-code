@@ -74,7 +74,7 @@ int main() {
         cmocka_unit_test(test_part1),
         cmocka_unit_test(test_part1_large),
         cmocka_unit_test(test_part2),
-        /*cmocka_unit_test(test_part2_large),*/
+        cmocka_unit_test(test_part2_large),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

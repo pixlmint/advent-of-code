@@ -148,76 +148,59 @@ bool has_wall_in_direction(IntMatrix *map, Point *from, int direction) {
     return has_wall;
 }
 
-void move_large_box(IntMatrix *map, Point *ul, int direction) {
-    Point *new_position = get_new_position(ul, direction);
 
-    Point tmp = {ul->x + 1, ul->y};
-    Point *new_position_diag = get_new_position(&tmp, direction);
-
-    char next_character = map->data[(int) new_position->y][(int) new_position->x];
-    char next_character_diag = map->data[(int) new_position_diag->y][(int) new_position_diag->x];
-    char current_character = map->data[(int) ul->y][(int) ul->x];
-
-    if (current_character != '[') {
-        fprintf(stderr, "ERROR: Unexpected error, we expect [ here but found %c\n", current_character);
-    }
-    if (next_character == '#' || next_character_diag == '#') {
-        fprintf(stderr, "ERROR: Unable to move to {%f, %f}, there is a wall\n", new_position->x, new_position->y);
-        free(new_position_diag);
-        free(new_position);
-        return;
-    }
-
-    if (next_character == '[') {
-        move_large_box(map, new_position, direction);
-    } else if (next_character == ']') {
-        if (direction == MOVE_LEFT) {
-            Point other_pos = {new_position->x - 1, new_position->y};
-            move_large_box(map, &other_pos, direction);
-        } else if (direction == MOVE_RIGHT) {
-            Point other_pos = {new_position->x + 1, new_position->y};
-            exec_move(map, &other_pos, direction);
-        }
-    }
-    if (next_character_diag == '[' && (direction == MOVE_UP || direction == MOVE_DOWN)) {
-        move_large_box(map, new_position_diag, direction);
-    }
-
-    map->data[(int) ul->y][(int) ul->x] = '.';
-    map->data[(int) ul->y][(int) ul->x + 1] = '.';
-
-    map->data[(int) new_position->y][(int) new_position->x] = '[';
-    map->data[(int) new_position->y][(int) new_position->x + 1] = ']';
-
-    free(new_position_diag);
-    free(new_position);
-}
-
-void exec_move(IntMatrix *map, Point *from, int direction) {
+bool exec_move(IntMatrix *map, Point *from, int direction) {
     char current_character = map->data[(int) from->y][(int) from->x];
 
-    if (current_character == '.' || current_character == '#') {
-        return;
+    if (current_character == '.') {
+        return true;
+    } else if (current_character == '#') {
+        return false;
     }
 
     Point *new_position = get_new_position(from, direction);
-    char next_character = map->data[(int) new_position->y][(int) new_position->x];
 
-    if (next_character == '[') {
-        move_large_box(map, new_position, direction);
-    } else if (next_character == ']') {
-        Point other_point = {new_position->x - 1, new_position->y};
-        move_large_box(map, &other_point, direction);
+    bool successful_move = true;
+    if (current_character == 'O' || current_character == '@') {
+        successful_move = exec_move(map, new_position, direction);
+    } else if (current_character == ']') {
+        Point other_part = {from->x - 1, from->y};
+        free(new_position);
+        return exec_move(map, &other_part, direction);
+    } else if (current_character == '[') {
+        if (direction != MOVE_RIGHT) {
+            successful_move = exec_move(map, new_position, direction);
+        } else {
+            Point other_point = {from->x + 2, from->y};
+            successful_move = exec_move(map, &other_point, direction);
+        }
+        if (successful_move && direction != MOVE_LEFT) {
+            Point other_point = {from->x + 1, from->y};
+            Point *next_point = get_new_position(&other_point, direction);
+            successful_move = exec_move(map, next_point, direction);
+            free(next_point);
+        }
+    } else {
+        fprintf(stderr, "Unknown character: %c\n", current_character);
+        free(new_position);
+        return false;
     }
 
-    if (next_character == 'O') {
-        exec_move(map, new_position, direction);
+    if (successful_move) {
+        if (current_character == '[') {
+            Point other_point = {from->x + 1, from->y};
+            map->data[(int) new_position->y][(int) new_position->x + 1] = ']';
+            map->data[(int) other_point.y][(int) other_point.x] = '.';
+        }
+        map->data[(int) new_position->y][(int) new_position->x] = current_character;
+        if (current_character != '[' || direction != MOVE_LEFT) {
+            map->data[(int) from->y][(int) from->x] = '.';
+        }
     }
-
-    map->data[(int) new_position->y][(int) new_position->x] = current_character;
-    map->data[(int) from->y][(int) from->x] = '.';
 
     free(new_position);
+
+    return successful_move;
 }
 
 bool try_make_move(IntMatrix *map, Point *box, int direction) {
@@ -246,19 +229,11 @@ void do_moves(IntArray *moves, IntMatrix *map) {
     }
 
     for (int i = 0; i < moves->length; i++) {
-        if (i == 164) {
-            printf("164\n");
-        }
         if (try_make_move(map, bot_position, moves->values[i])) {
             Point *tmp_bot_position = bot_position;
             bot_position = get_new_position(bot_position, moves->values[i]);
             free(tmp_bot_position);
-        } else {
-            printf("Did not move\n");
         }
-        printf("Move Number %d: %c:\n", i, get_direction_move(moves->values[i]));
-        print_matrix_as_char(map);
-        printf("---\n");
     }
     free(bot_position);
 }
@@ -397,7 +372,6 @@ int part_2(const char *input) {
     }
 
     int result = sum_gps(map);
-    print_matrix_as_char(map);
     free_matrix(map);
     free_array(moves);
 
@@ -406,6 +380,7 @@ int part_2(const char *input) {
 
 int solve_day15(const char *input) {
     printf("Part 1: %d\n", part_1(input));
+    printf("Part 2: %d\n", part_2(input));
     return 0;
 }
 
