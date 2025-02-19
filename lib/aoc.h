@@ -5,6 +5,17 @@
 #include <sys/types.h>
 #include <time.h>
 
+typedef struct PathNode {
+    int value;
+    int x;
+    int y;
+    bool reaches_target;
+    struct PathNode *prev;
+    struct PathNode *o;
+    struct PathNode *r;
+    struct PathNode *l;
+} PathNode;
+
 
 // ------------- Hash Map -----------------------------------------
 typedef struct HashMap {
@@ -22,6 +33,7 @@ bool map_has(HashMap *map, char *key);
 void map_remove(HashMap *map, char *key);
 long map_long_get(HashMap *map, char *key);
 void map_long_put(HashMap *map, char *key, long value);
+PathNode *map_node_get(HashMap *map, char *key);
 void free_map(HashMap *map);
 void print_map(HashMap *map);
 
@@ -52,6 +64,17 @@ int long_array_index_of(LongArray *array, long search);
 void free_long_array(LongArray *array);
 void print_long_array(LongArray *arr);
 
+// ------------- String Array -------------------------------------
+typedef struct StringArray {
+    int length;
+    int max_length;
+    char **values;
+} StringArray;
+StringArray *init_string_array(const int max_length);
+int string_array_append(StringArray *array, char *value);
+void print_string_array(StringArray *array);
+void free_string_array(StringArray *array);
+
 // ------------- Int Matrix ---------------------------------------
 typedef struct IntMatrix {
     int **data;
@@ -60,6 +83,7 @@ typedef struct IntMatrix {
 } IntMatrix;
 
 IntMatrix *init_int_matrix(const int rows, const int cols);
+IntMatrix *init_int_matrix_value(const int rows, const int cols, const int value);
 void free_matrix(IntMatrix *matrix);
 IntMatrix *transpose_int_matrix(IntMatrix *original);
 IntMatrix *flip_int_matrix(IntMatrix *original);
@@ -97,12 +121,24 @@ int point_array_index_of(PointArray *arr, Point *search);
 void free_point_array(PointArray *arr);
 PointArray *point_array_merge(PointArray *a, PointArray *b);
 PointArray *point_array_clone(PointArray *orig);
+void print_point_array(PointArray *arr);
 
+// ------------- Paths -------------------------------------------
+#define MAPS_WALL '#'  // The Character used to identify non-path elements
+
+void free_path_tree(PathNode* node);
+int get_lowest_score(PathNode *node);
+int count_path_tiles(PathNode *node);
+PathNode *find_parent_node(PathNode* current, int x, int y);
+PathNode *init_path_node(int x, int y, int score, PathNode *previous);
+bool get_tiles_in_path(PathNode *node, int min_score, PointArray *path_tiles);
+void print_path(IntMatrix *map, PathNode *root);
 
 // ------------- File Handling ----------------------------------
 char *read_file(const char *fp);
 int count_lines(FILE *file);
 int str_count_lines(char *str);
+StringArray *str_split(const char *input, const char separator);
 int count_columns(FILE *file);
 
 

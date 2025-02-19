@@ -64,65 +64,6 @@ char val(IntMatrix *map, Point *point) {
     return map->data[(int) point->y][(int) point->x];
 }
 
-PathNode *find_parent_node(PathNode* current, int x, int y) {
-    if (current->prev != NULL) {
-        if (current->prev->x == x && current->prev->y == y) {
-            return current->prev;
-        } else {
-            return find_parent_node(current->prev, x, y);
-        }
-    }
-
-    return NULL;
-}
-
-void free_path_tree(PathNode* node) {
-    if (node->o != NULL) {
-        free_path_tree(node->o);
-    }
-    if (node->l != NULL) {
-        free_path_tree(node->l);
-    }
-    if (node->r != NULL) {
-        free_path_tree(node->r);
-    }
-    free(node);
-}
-
-void insert_path(IntMatrix *map, PathNode *node, int min_score) {
-    if (get_lowest_score(node) > min_score) {
-        return;
-    }
-    map->data[node->y][node->x] = map->data[node->y][node->x]+ '!';
-    if (node->l != NULL && node->l->reaches_target) {
-        insert_path(map, node->l, min_score);
-    }
-    if (node->r != NULL && node->r->reaches_target) {
-        insert_path(map, node->r, min_score);
-    }
-    if (node->o != NULL && node->o->reaches_target) {
-        insert_path(map, node->o, min_score);
-    }
-}
-
-void print_path(IntMatrix *map, PathNode *root) {
-    IntMatrix *clone = clone_int_matrix(map);
-
-    for (int i = 0; i < clone->rows; i++) {
-        for (int j = 0; j < clone->cols; j++) {
-            if (clone->data[i][j] == '0') {
-                clone->data[i][j] = '.';
-            }
-        }
-    }
-
-    int score = get_lowest_score(root);
-    insert_path(clone, root, score);
-
-    print_matrix_as_char(clone);
-    free_matrix(clone);
-}
-
 PathNode *find_path(IntMatrix *map, IntMatrix *visited, PathNode *previous, Point *direction, Point *target, int current_score, int *lowest_score) {
     int new_y = previous->y + (int) direction->y;
     int new_x = previous->x + (int) direction->x;
@@ -133,15 +74,7 @@ PathNode *find_path(IntMatrix *map, IntMatrix *visited, PathNode *previous, Poin
         return NULL;
     }
 
-    PathNode *current = malloc(sizeof(PathNode));
-    current->prev = previous;
-    current->x = new_x;
-    current->y = new_y;
-    current->value = current_score;
-    current->o = NULL;
-    current->l = NULL;
-    current->r = NULL;
-    current->reaches_target = false;
+    PathNode *current = init_path_node(new_x, new_y, current_score, previous);
 
     int previous_visit = visited->data[(int) current->y][(int) current->x];
     if (previous_visit + 1000 < current_score && previous_visit != 0) {
@@ -194,38 +127,6 @@ PathNode *find_path(IntMatrix *map, IntMatrix *visited, PathNode *previous, Poin
     return current;
 }
 
-void get_tiles_in_path(PathNode *node, int min_score, PointArray *path_tiles) {
-    if (node == NULL || !node->reaches_target  || get_lowest_score(node) > min_score) {
-        return;
-    }
-    Point *p = malloc(sizeof(Point));
-    p->x = node->x;
-    p->y = node->y;
-    if (point_array_index_of(path_tiles, p) != -1) {
-        free(p);
-        return;
-    }
-
-    point_array_append(path_tiles, p);
-    free(p);
-
-    get_tiles_in_path(node->l, min_score, path_tiles);
-    get_tiles_in_path(node->r, min_score, path_tiles);
-    get_tiles_in_path(node->o, min_score, path_tiles);
-}
-
-int count_path_tiles(PathNode *root) {
-    int score = get_lowest_score(root);
-
-    PointArray *nodes = init_point_array(10);
-
-    get_tiles_in_path(root, score, nodes);
-
-    int count = nodes->length;
-    free_point_array(nodes);
-    return count;
-}
-
 PathNode *search_paths(FILE *file) {
     void **data = read_map(file);
     IntMatrix *map = data[0];
@@ -236,12 +137,7 @@ PathNode *search_paths(FILE *file) {
     Point *dir = malloc(sizeof(Point));
     dir->x = 1;
     dir->y = 0;
-    IntMatrix *visited = init_int_matrix(map->rows, map->cols);
-    for (int i = 0; i < map->rows; i++) {
-        for (int j = 0; j < map->cols; j++) {
-            visited->data[i][j] = 0;
-        }
-    }
+    IntMatrix *visited = init_int_matrix_value(map->rows, map->cols, 0);
 
     int lowest_score = INT_MAX;
 
@@ -257,38 +153,6 @@ PathNode *search_paths(FILE *file) {
     return root;
 }
 
-int get_lowest_score(PathNode *node) {
-    int lowest = INT_MAX;
-
-    if (node->r != NULL && node->r->reaches_target) {
-        int l_r = get_lowest_score(node->r);
-        if (l_r < lowest) {
-            lowest = l_r;
-        }
-    }
-    if (node->o != NULL && node->o->reaches_target) {
-        int l_o = get_lowest_score(node->o);
-        if (l_o < lowest) {
-            lowest = l_o;
-        }
-    }
-    if (node->l != NULL && node->l->reaches_target) {
-        int l_l = get_lowest_score(node->l);
-        if (l_l < lowest) {
-            lowest = l_l;
-        }
-    }
-
-    if (
-        (node->l == NULL || !node->l->reaches_target) 
-        && (node->o == NULL || !node->o->reaches_target)
-        && (node->r == NULL || !node->r->reaches_target)
-    ) {
-        return node->value;
-    }
-
-    return lowest;
-}
 
 int solve_day16(const char *input) {
     FILE *file = fopen(input, "r");

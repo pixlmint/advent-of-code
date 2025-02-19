@@ -55,7 +55,6 @@ void inflate_and_rehash(HashMap *map) {
 
     int new_length = map->max_length * 2;
     int original_length = map->max_length;
-    // printf("Inflating from %d to %d (length: %d)\n", original_length, new_length, map->length);
     
     map->keys = malloc(sizeof(char*) * new_length);
     map->values = malloc(sizeof(int*) * new_length);
@@ -76,7 +75,6 @@ void inflate_and_rehash(HashMap *map) {
     free(original_keys);
     free(original_values);
     free(original_map_state);
-    // printf("Done inflating\n");
 }
 
 void map_put(HashMap *map, char *key, void *value) {

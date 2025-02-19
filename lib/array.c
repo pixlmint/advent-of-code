@@ -67,7 +67,7 @@ void print_int_array(IntArray *arr) {
 }
 
 // ------------- Long Array ----------------------------------------
-struct LongArray *init_long_array(const int max_length) {
+LongArray *init_long_array(const int max_length) {
     LongArray *numbers = malloc(sizeof(struct LongArray));
     numbers->length = 0;
     numbers->max_length = max_length;
@@ -193,6 +193,13 @@ PointArray *point_array_merge(PointArray *a, PointArray *b) {
     return merged;
 }
 
+void print_point_array(PointArray *arr) {
+    printf("Point Array with %i elements:\n", arr->length);
+    for (int i = 0; i < arr->length; i++) {
+        printf("\tx=%f, y=%f\n", arr->points[i]->x, arr->points[i]->y);
+    }
+}
+
 void free_point_array(PointArray *arr) {
     for (int i = 0; i < arr->length; i++) {
         free(arr->points[i]);
@@ -201,9 +208,47 @@ void free_point_array(PointArray *arr) {
     free(arr);
 }
 
+// ------------- String Array ----------------------------------------
+StringArray *init_string_array(int max_length) {
+    if (max_length == 1) {
+        max_length = 2;
+    }
+    StringArray *arr = malloc(sizeof(StringArray));
+    arr->max_length = max_length;
+    arr->length = 0;
+    arr->values = malloc(sizeof(char**) * max_length);
+
+    return arr;
+}
+
+int string_array_append(StringArray *array, char *value) {
+    if (array->length == array->max_length) {
+        array->max_length += array->max_length / 2;
+        array->values = realloc(array->values, sizeof(char**) * array->max_length);
+    }
+    int pos = array->length;
+    array->length += 1;
+    array->values[pos] = value;
+    return pos;
+}
+
+void print_string_array(StringArray *array) {
+    for (int i = 0; i < array->length; i++) {
+        printf("String %i:\n\"%s\"\n", i, array->values[i]);
+    }
+}
+
+void free_string_array(StringArray *array) {
+    for (int i = 0; i < array->length; i++) {
+        free(array->values[i]);
+    }
+    free(array->values);
+    free(array);
+}
+
 // ------------- Int Matrices ----------------------------------------
 
-struct IntMatrix *init_int_matrix(const int rows, const int cols) {
+IntMatrix *init_int_matrix(const int rows, const int cols) {
     IntMatrix *m = malloc(sizeof(IntMatrix));
     m->cols = cols;
     m->rows = rows;
@@ -211,6 +256,17 @@ struct IntMatrix *init_int_matrix(const int rows, const int cols) {
 
     for (int i = 0; i < rows; i++) {
         m->data[i] = malloc(sizeof(int) * cols);
+    }
+
+    return m;
+}
+
+IntMatrix *init_int_matrix_value(const int rows, const int cols, const int value) {
+    IntMatrix *m = init_int_matrix(rows, cols);
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            m->data[i][j] = value;
+        }
     }
 
     return m;
@@ -275,8 +331,8 @@ void print_matrix(IntMatrix *matrix) {
     for (int i = 0; i < matrix->rows; i++) {
         printf("| ");
         for (int j = 0; j < matrix->cols; j++) {
-            printf("%d | ", matrix->data[i][j]);
-            // printf("%d", matrix->data[i][j]);
+            // printf("%d | ", matrix->data[i][j]);
+            printf("%d ", matrix->data[i][j]);
         }
         printf("\n");
     }
