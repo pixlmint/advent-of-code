@@ -81,6 +81,24 @@ static void test_count_min_steps(void **state) {
     assert_int_equal(exp, steps);
 }
 
+static void test_get_next_corrupting_byte(void **state) {
+    char *input = read_file("tests/test_day18_input.txt");
+    PointArray *points = read_input(input);
+    free(input);
+    IntMatrix *map = init_int_matrix_value(7, 7, 0);
+
+    simulate_bytes_falling(map, points, 0, 12);
+
+    Point *point = get_first_corrupting_byte(map, points, 12);
+
+    assert_non_null(point);
+    assert_int_equal(point->x, 6);
+    assert_int_equal(point->y, 1);
+
+    free_point_array(points);
+    free_matrix(map);
+}
+
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_str_split),
@@ -88,6 +106,7 @@ int main() {
         cmocka_unit_test(test_str_split_comma),
         cmocka_unit_test(test_read_input),
         cmocka_unit_test(test_count_min_steps),
+        cmocka_unit_test(test_get_next_corrupting_byte),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

@@ -6,6 +6,14 @@
 #include "day18.h"
 #include "aoc.h"
 
+/*
+------------------------
+total: 83743.887000ms
+part 1: 48.421000ms
+part 2: 83695.397000ms
+------------------------
+*/
+
 PointArray *read_input(const char *input_coordinates) {
     StringArray *lines = str_split(input_coordinates, '\n');
     PointArray *coords = init_point_array(lines->length);
@@ -40,7 +48,7 @@ void simulate_bytes_falling(IntMatrix *map, PointArray *points, size_t first, si
     }
 }
 
-size_t count_min_steps(IntMatrix *map) {
+PathNode *dijkstra(IntMatrix *map) {
     Point end = {map->cols - 1, map->cols - 1};
     Point direction = {1, 0};
     int lowest_score = INT_MAX;
@@ -55,16 +63,24 @@ size_t count_min_steps(IntMatrix *map) {
     PathNode *target = path_matrix[map->rows - 1][map->cols - 1];
     PathNode *root = find_path(map, path_matrix, start, &direction, &end, 1, &lowest_score);
 
-    int count = target->value - 1;
-
     for (int i = 0; i < map->rows; i++) {
         for (int j = 0; j < map->cols; j++) {
-            free(path_matrix[i][j]);
+            if (!(i == map->rows - 1 && j == map->cols -1)) {  // do not free the target
+                free(path_matrix[i][j]);
+            }
         }
         free(path_matrix[i]);
     }
     free(path_matrix);
     free(start);
+
+    return target;
+}
+
+size_t count_min_steps(IntMatrix *map) {
+    PathNode *target = dijkstra(map);
+    int count = target->value - 1;
+    free(target);
 
     return count;
 }
@@ -137,25 +153,42 @@ PathNode *find_path(IntMatrix *map, PathNode ***visited, PathNode *previous, Poi
     return current;
 }
 
+Point *get_first_corrupting_byte(IntMatrix *map, PointArray *bytes, int current_count) {
+    PathNode *target;
+    for (int i = current_count; i < bytes->length; i++) {
+        simulate_bytes_falling(map, bytes, i, i + 1);
+        target = dijkstra(map);
+        if (!target->value) {
+            free(target);
+            return bytes->points[i];
+        }
+    }
+    if (target) {
+        free(target);
+    }
+
+    return NULL;
+}
+
 int solve_day18(const char *input) {
     char *input_str = read_file(input);
     PointArray *points = read_input(input_str);
     free(input_str);
     IntMatrix *map = init_int_matrix_value(71, 71, 0);
+    Perf *perf = perf_init();
+    timer_start("total", perf);
+    int part1_timer = timer_start("part 1", perf);
     simulate_bytes_falling(map, points, 0, 1024);
-    IntMatrix *clone = clone_int_matrix(map);
-    for (int i = 0; i < clone->rows; i++) {
-        for (int j = 0; j < clone->cols; j++) {
-            if (clone->data[i][j] == 0) {
-                clone->data [i][j] = '.';
-            }
-        }
-    }
-    print_matrix_as_char(clone);
-    free_matrix(clone);
     size_t steps = count_min_steps(map);
+    timer_stop(part1_timer, perf);
+    printf("Part 1 result: %ld\n", steps);
+
+    timer_start("part 2", perf);
+    Point *problematic = get_first_corrupting_byte(map, points, 1024);
+    printf("Part 2 result: %d,%d\n", (int) problematic->x, (int) problematic->y);
+    perf_report(perf);
+    perf_close(perf);
     free_point_array(points);
     free_matrix(map);
-    printf("Part 1 result: %ld\n", steps);
     return 0;
 }

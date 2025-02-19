@@ -11,5 +11,6 @@ PointArray *read_input(const char *input_coordinates);
 PathNode *find_path(IntMatrix *map, PathNode ***visited, PathNode *previous, Point *direction, Point *target, int current_score, int *lowest_score);
 size_t count_min_steps(IntMatrix *map);
 void simulate_bytes_falling(IntMatrix *map, PointArray *points, size_t first, size_t steps);
+Point *get_first_corrupting_byte(IntMatrix *map, PointArray *bytes, int current_count);
 
 #endif
