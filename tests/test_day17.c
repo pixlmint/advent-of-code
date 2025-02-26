@@ -182,7 +182,7 @@ int main() {
         cmocka_unit_test(test_fifth_calculation),
         cmocka_unit_test(test_sixth_calculation),
         cmocka_unit_test(test_seventh_calculation),
-        // cmocka_unit_test(test_find_register_value),
+        cmocka_unit_test(test_find_register_value),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

@@ -92,7 +92,7 @@ void free_calculator(Calculator *calc) {
 
 int find_registera_value(Calculator *calculator, IntArray *program) {
     Calculator *tmp = clone_calculator(calculator);
-    for (uint64_t i = INT_MAX; i < UINT64_MAX; i++) {
+    for (uint64_t i = 0; i < UINT64_MAX; i++) {
         tmp->a = i;
         tmp->instruction_pointer = 0;
         free(tmp->output->values);
@@ -123,7 +123,7 @@ int find_registera_value(Calculator *calculator, IntArray *program) {
 Calculator *get_calc() {
     Calculator *calc = malloc(sizeof(Calculator));
 
-    calc->a = 37293246;
+    calc->a = 0;
     calc->b = 0;
     calc->c = 0;
     calc->instruction_pointer = 0;
@@ -132,8 +132,24 @@ Calculator *get_calc() {
     return calc;
 }
 
+/*
+
+| input        | instruction                                  |
+| ------------ | -------------------------------------------- |
+| 2 (bst) -> 4 | B = A % 8                                    |
+| 1 (bxl) -> 6 | B = B XOR 6                                  |
+| 7 (cdv) -> 5 | C = A / 2^B                                  |
+| 4 (bxc) -> 4 | B = B XOR C                                  |
+| 1 (bxl) -> 7 | B = B XOR 7                                  |
+| 0 (adv) -> 3 | A = A / 8                                    |
+| 5 (out) -> 5 | print B % 8                                  |
+| 3 (jnz) -> 0 | A == 0 ? terminate : instruction pointer = 0 |
+
+*/
+
 int solve_day17(const char *input) {
     Calculator *calc = get_calc();
+    calc->a = 37293246;
 
     IntArray *calculation = malloc(sizeof(IntArray));
     calculation->length = 16;
@@ -156,16 +172,16 @@ int solve_day17(const char *input) {
     }
     printf("\n");
     free_calculator(calc);
-    /*calc = get_calc();*/
-    /**/
-    /*timer_start("Part 2", perf);*/
-    /*int better_a = find_registera_value(calc, calculation);*/
-    /*printf("Part 2: %d\n", better_a);*/
+    calc = get_calc();
+
+    timer_start("Part 2", perf);
+    int better_a = find_registera_value(calc, calculation);
+    printf("Part 2: %d\n", better_a);
 
     perf_report(perf);
     perf_close(perf);
 
-    // free_calculator(calc);
+    free_calculator(calc);
     free(calculation);
     return 0;
 }
