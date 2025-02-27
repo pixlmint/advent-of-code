@@ -170,7 +170,35 @@ static void test_find_register_value(void **state) {
     free_array(calculation);
     free_array(calc->output);
     free(calc);
+}
 
+static void test_array_slice(void **state) {
+    IntArray *arr = init_int_array(10);
+    for (int i = 0; i < 10; i++) {
+        int_array_append(arr, i);
+    }
+
+    IntArray *sliced = int_array_slice(arr, 4, 8);
+    assert_int_equal(sliced->length, 4);
+    for (int i = 0; i < 4; i++) {
+        assert_true(arr->values[i + 4] == sliced->values[i]);
+    }
+    free_array(arr);
+    free_array(sliced);
+}
+
+static void test_int_array_equal(void **state) {
+    IntArray *arr = init_int_array(10);
+    for (int i = 0; i < 10; i++) {
+        int_array_append(arr, i);
+    }
+
+    IntArray *sliced = int_array_slice(arr, 4, 8);
+
+    assert_true(int_array_equal(arr, arr));
+    assert_false(int_array_equal(arr, sliced));
+    free_array(arr);
+    free_array(sliced);
 }
 
 int main() {
@@ -183,6 +211,8 @@ int main() {
         cmocka_unit_test(test_sixth_calculation),
         cmocka_unit_test(test_seventh_calculation),
         cmocka_unit_test(test_find_register_value),
+        cmocka_unit_test(test_array_slice),
+        cmocka_unit_test(test_int_array_equal),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

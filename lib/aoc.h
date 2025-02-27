@@ -51,6 +51,9 @@ int int_array_index_of(IntArray *array, int search);
 void free_array(IntArray *array);
 void print_int_array(IntArray *arr);
 int *copy_array_section(int* source, int start, int end);
+IntArray *int_array_slice(IntArray *original, int start_i, int end_i);
+void int_array_slice_to(IntArray *original, IntArray *target, int start_i, int end_i);
+bool int_array_equal(IntArray *a, IntArray *b);
 
 // ------------- Long Array ---------------------------------------
 typedef struct LongArray {

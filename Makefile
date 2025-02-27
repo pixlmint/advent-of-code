@@ -16,4 +16,7 @@ valgrind:
 valgrindr:
 	./aoc_helper.sh valgrind_run
 
+debug:
+	./aoc_helper.sh debug
+
 .PHONY: test create

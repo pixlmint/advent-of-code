@@ -272,11 +272,62 @@ EOF
 
     # Compile and run the program
     # echo "Running compile command\n$cmd"
-    echo "gcc -lpthread -o \"$output_bin\" \"$temp_main\" \"$day_src\" -I\"$SRC_DIR\" -I\"$LIB_DIR\" -lm $sources"
+    echo "gcc -lpthread -o \"$output_bin\" \"$temp_main\" \"$day_src\" -I\"$SRC_DIR\" -I\"$LIB_DIR\" -O3 -lm $sources"
     bear -- gcc -lpthread -o "$output_bin" "$temp_main" "$day_src" -I"$SRC_DIR" -I"$LIB_DIR" -lm $sources
     if [[ $? -eq 0 ]]; then
         echo "Running Day $day..."
         "$output_bin"
+    else
+        echo "Compilation failed for Day $day."
+    fi
+
+    # Cleanup temporary main file
+    rm -f "$temp_main"
+}
+
+run_debug() {
+    read -p "Enter day number: " day
+    day=$(printf "%02d" $day) # Pad to two digits (e.g., 01, 02)
+
+    mkdir -p "$BINDIR"
+
+    day_src="$SRC_DIR/day${day}.c"
+    day_hdr="day${day}.h"
+    input_file="$INPUT_DIR/day${day}.txt"
+    output_bin="$BINDIR/debug_day${day}"
+    temp_main="$BINDIR/main_day${day}.c"
+    sources=$(find "$LIB_DIR" -name "*.c" -type f | tr '\n' ' ' | sed 's/[[:space:]]*$//')
+
+    if [[ ! -f $day_src ]]; then
+        echo "Source file for Day $day not found: $day_src"
+        return
+    fi
+
+    if [[ ! -f "$SRC_DIR/$day_hdr" ]]; then
+        echo "Header file for Day $day not found: $SRC_DIR/$day_hdr"
+        return
+    fi
+
+    if [[ ! -f $input_file ]]; then
+        echo "Input file for Day $day not found: $input_file"
+        return
+    fi
+
+    # Create a temporary main file
+    cat > "$temp_main" <<EOF
+#include "${day_hdr}"
+
+int main() {
+    const char *input = "$input_file";
+    return solve_day${day}(input);
+}
+EOF
+
+    # Compile and run the program
+    echo "gcc -g -lpthread -o \"$output_bin\" \"$temp_main\" \"$day_src\" -I\"$SRC_DIR\" -I\"$LIB_DIR\" -lm $sources"
+    bear -- gcc -g -lpthread -o "$output_bin" "$temp_main" "$day_src" -I"$SRC_DIR" -I"$LIB_DIR" -lm $sources
+    if [[ $? -eq 0 ]]; then
+        echo "Ready for debugging"
     else
         echo "Compilation failed for Day $day."
     fi
@@ -303,6 +354,9 @@ case $1 in
         ;;
     valgrind)
         valgrind_test
+        ;;
+    debug)
+        run_debug
         ;;
     *)
         echo "Usage: $0 {create|test|run|debug_test|valgrind}"

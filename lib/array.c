@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <math.h>
 #include "aoc.h"
 
 // ------------- Int Array ----------------------------------------
@@ -35,6 +36,39 @@ int int_array_index_of(IntArray *array, int search) {
     }
 
     return -1;
+}
+
+IntArray *int_array_slice(IntArray *original, int start_i, int end_i) {
+    int length = log(original->length);
+    if (length < 10) {
+        length = 10;
+    }
+    IntArray *sliced = init_int_array(length);
+    for (int i = start_i; i < end_i; i++) {
+        int_array_append(sliced, original->values[i]);
+    }
+
+    return sliced;
+}
+
+void int_array_slice_to(IntArray *original, IntArray *target, int start_i, int end_i) {
+    target->length = 0;
+    for (int i = start_i; i < end_i; i++) {
+        int_array_append(target, original->values[i]);
+    }
+}
+
+bool int_array_equal(IntArray *a, IntArray *b) {
+    if (a->length != b->length) {
+        return false;
+    }
+    for (int i = 0; i < a->length; i++) {
+        if (a->values[i] != b->values[i]) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 void free_array(struct IntArray *array) {

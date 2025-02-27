@@ -7,7 +7,9 @@
 #include "day17.h"
 #include "aoc.h"
 
-long get_value(Calculator *calc, long input) {
+typedef enum {adv, bxl, bst, jnz, bxc, out, bdv, cdv} opcode_t;
+
+reg_t get_value(Calculator *calc, int input) {
     if (input < 4) {
         return input;
     } else {
@@ -20,55 +22,86 @@ long get_value(Calculator *calc, long input) {
                 return calc->c;
         }
     }
-    fprintf(stderr, "Invalid value passed to get_value: %ld\n", input);
+    fprintf(stderr, "Invalid value passed to get_value: %i\n", input);
     return -1;
 }
 
+reg_t reg_pow(int base, int power) {
+    if (power == 0) {
+        return 1;
+    }
+    reg_t res = base;
+    for (int i = 1; i < power; i++) {
+        res *= base;
+    }
+    // printf("Powering %i^%i = %lld\n", base, power, res);
+    return res;
+}
+
 void process_calculation(Calculator *calculator, IntArray *program, bool break_on_mismatch_output) {
+    reg_t denominator;
+    reg_t value;
+    opcode_t opcode;
+    int input;
     while (calculator->instruction_pointer < program->length) {
-        int opcode = program->values[calculator->instruction_pointer];
-        int input = program->values[calculator->instruction_pointer + 1];
-        double denominator;
+        opcode = program->values[calculator->instruction_pointer];
+        input = program->values[calculator->instruction_pointer + 1];
 
         switch (opcode) {
-            case 0:
-                denominator = pow(2, get_value(calculator, input));
-                calculator->a = (int) (calculator->a / denominator);
+            case adv:
+                value = get_value(calculator, input);
+                if (value < INT_MAX) {
+                    denominator = pow(2, value);
+                } else {
+                    denominator = reg_pow(2, get_value(calculator, input));
+                }
+                calculator->a = calculator->a / denominator;
                 break;
-            case 1:
+            case bxl:
                 calculator->b = calculator->b ^ input;
                 break;
-            case 2:
-                calculator->b = get_value(calculator, input) % 8;
+            case bst:
+                value = get_value(calculator, input);
+                calculator->b = value % 8;
                 break;
-            case 3:
+            case jnz:
                 if (calculator->a == 0) {
                     calculator->instruction_pointer += 2;
                 } else {
                     calculator->instruction_pointer = input;
                 }
                 break;
-            case 4:
+            case bxc:
                 calculator->b = calculator->b ^ calculator->c;
                 break;
-            case 5:
-                const float val = get_value(calculator, input) % 8;
-                int_array_append(calculator->output, val);
-                if (break_on_mismatch_output && (program->length < calculator->output->length || val != program->values[calculator->output->length - 1])) {
+            case out:
+                value = get_value(calculator, input);
+                int_array_append(calculator->output, value % 8);
+                if (break_on_mismatch_output && program->length < calculator->output->length) {
                     return;
                 }
                 break;
-            case 6:
-                denominator = pow(2, get_value(calculator, input));
-                calculator->b = (int) (calculator->a / denominator);
+            case bdv:
+                value = get_value(calculator, input);
+                if (value < INT_MAX) {
+                    denominator = pow(2, value);
+                } else {
+                    denominator = reg_pow(2, value);
+                }
+                calculator->b = calculator->a / denominator;
                 break;
-            case 7:
-                denominator = pow(2, get_value(calculator, input));
-                calculator->c = (int) (calculator->a / denominator);
+            case cdv:
+                value = get_value(calculator, input);
+                if (value < INT_MAX) {
+                    denominator = pow(2, value);
+                } else {
+                    denominator = reg_pow(2, value);
+                }
+                calculator->c = calculator->a / denominator;
                 break;
         }
 
-        if (opcode != 3) {
+        if (opcode != jnz) {
             calculator->instruction_pointer += 2;
         }
     }
@@ -90,34 +123,48 @@ void free_calculator(Calculator *calc) {
     free(calc);
 }
 
-int find_registera_value(Calculator *calculator, IntArray *program) {
+reg_t find_registera_value(Calculator *calculator, IntArray *program) {
     Calculator *tmp = clone_calculator(calculator);
-    for (uint64_t i = 0; i < UINT64_MAX; i++) {
-        tmp->a = i;
+    reg_t a = pow(8, program->length - 1);
+    int power = program->length - 2;
+    bool found = false;
+    IntArray *matched = init_int_array(program->length);
+    int_array_append(matched, program->values[program->length - 1]);
+
+    while (found == false) {
+        a += pow(8, power);
+        tmp->a = a;
         tmp->instruction_pointer = 0;
-        free(tmp->output->values);
-        tmp->output->values = malloc(sizeof(int) * program->length);
         tmp->output->length = 0;
-        if (i % 1000000 == 0) {
-            printf("Trying %lu\n", i);
-        }
-        process_calculation(tmp, program, true);
-        if (tmp->output->length == program->length) {
-            bool is_valid = true;
-            for (int j = 0; j < program->length; j++) {
-                if (program->values[j] != tmp->output->values[j]) {
-                    is_valid = false;
+        process_calculation(tmp, program, false);
+
+        if (int_array_equal(program, tmp->output)) {
+            found = true;
+        } else {
+            const int start_point = tmp->output->length - matched->length;
+            bool arrays_equal = true;
+            for (int i = 0; i < tmp->output->length - start_point; i++) {
+                if (matched->values[i] != tmp->output->values[i + start_point]) {
+                    arrays_equal = false;
                     break;
                 }
             }
-            if (is_valid) {
-                free_calculator(tmp);
-                return i;
+            if (arrays_equal) {
+                power -= 1;
+                if (power < 0) {
+                    power = 0;
+                }
+                int new_length = matched->length + 1;
+                int_array_slice_to(program, matched, program->length - new_length, program->length);
             }
         }
     }
 
-    return -1;
+    free_calculator(tmp);
+    free_array(matched);
+    // free_array(tmp_sliced);
+
+    return a;
 }
 
 Calculator *get_calc() {
@@ -132,20 +179,25 @@ Calculator *get_calc() {
     return calc;
 }
 
-/*
 
-| input        | instruction                                  |
-| ------------ | -------------------------------------------- |
-| 2 (bst) -> 4 | B = A % 8                                    |
-| 1 (bxl) -> 6 | B = B XOR 6                                  |
-| 7 (cdv) -> 5 | C = A / 2^B                                  |
-| 4 (bxc) -> 4 | B = B XOR C                                  |
-| 1 (bxl) -> 7 | B = B XOR 7                                  |
-| 0 (adv) -> 3 | A = A / 8                                    |
-| 5 (out) -> 5 | print B % 8                                  |
-| 3 (jnz) -> 0 | A == 0 ? terminate : instruction pointer = 0 |
-
-*/
+// | input        | instruction                                  |
+// | ------------ | -------------------------------------------- |
+// | 2 (bst) -> 4 | B = A % 8                                    |
+// | 1 (bxl) -> 6 | B = B XOR 6                                  |
+// | 7 (cdv) -> 5 | C = A / 2^B                                  |
+// | 4 (bxc) -> 4 | B = B XOR C                                  |
+// | 1 (bxl) -> 7 | B = B XOR 7                                  |
+// | 0 (adv) -> 3 | A = A / 8                                    |
+// | 5 (out) -> 5 | print B % 8                                  |
+// | 3 (jnz) -> 0 | A == 0 ? terminate : instruction pointer = 0 |
+//
+// Final solution copied from here:
+// https://github.com/ading2210/advent-of-code-solutions/blob/main/2024/day17/day17.py#L60
+//
+//
+// | total  | 14030.469000ms |
+// | Part 1 | 0.005000ms     |
+// | Part 2 | 14030.458000ms |
 
 int solve_day17(const char *input) {
     Calculator *calc = get_calc();
@@ -175,8 +227,8 @@ int solve_day17(const char *input) {
     calc = get_calc();
 
     timer_start("Part 2", perf);
-    int better_a = find_registera_value(calc, calculation);
-    printf("Part 2: %d\n", better_a);
+    reg_t better_a = find_registera_value(calc, calculation);
+    printf("Part 2: %ld\n", better_a);
 
     perf_report(perf);
     perf_close(perf);
