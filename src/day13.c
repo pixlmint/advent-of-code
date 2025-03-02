@@ -8,107 +8,27 @@
 
 void get_next_machine(FILE *file, machine_t *m)
 {
-    char *line = malloc(sizeof(char) * 100);
-
-    fgets(line, 100, file);
-    sscanf(line, LINE1, &m->a_x, &m->a_y);
-    fgets(line, 100, file);
-    sscanf(line, LINE2, &m->b_x, &m->b_y);
-    fgets(line, 100, file);
-    sscanf(line, LINET, &m->t_x, &m->t_y);
-    fgets(line, 100, file);
-
-    free(line);
+    fscanf(file, LINE1, &m->a_x, &m->a_y);
+    fscanf(file, LINE2, &m->b_x, &m->b_y);
+    fscanf(file, LINET, &m->t_x, &m->t_y);
 }
 
-machine_t *clone_machine(machine_t *original)
+mat_t solve(machine_t *m)
 {
-    machine_t *m = malloc(sizeof(machine_t));
-    m->a_x = original->a_x;
-    m->a_y = original->a_y;
-    m->b_x = original->b_x;
-    m->b_y = original->b_y;
-    m->t_x = original->t_x;
-    m->t_y = original->t_y;
+    mat_t numerator_x = m->t_x * m->b_y - m->t_y * m->b_x;
+    mat_t denonimator_x = m->a_x * m->b_y - m->a_y * m->b_x;
 
-    return m;
-}
+    mat_t numerator_y = m->t_x * m->a_y - m->t_y * m->a_x;
+    mat_t denonimator_y = m->a_y * m->b_x - m->a_x * m->b_y;
 
-void print_machine(machine_t *m)
-{
-    printf("Button A: X+%i, Y+%i\n", (int) m->a_x, (int) m->a_y);
-    printf("Button B: X+%i, Y+%i\n", (int) m->b_x, (int) m->b_y);
-    printf("Prize: X=%i, Y=%i\n", (int) m->t_x, (int) m->t_y);
-}
+    if (numerator_x % denonimator_x == 0 && numerator_y % denonimator_y == 0) {
+        mat_t a = numerator_x / denonimator_x;
+        mat_t b = numerator_y / denonimator_y;
 
-void lde(float a, float b, float c, float *a0, float *b0)
-{
-    if ((int) a % (int) b == 0) {
-        *a0 = 0;
-        *b0 = c / b;
-    } else {
-        float a1, b1;
-        lde(b, (int) a % (int) b, c, &a1, &b1);
-        *a0 = b1;
-        *b0 = a1 - (a / b) * b1;
+        return PRICE_A * a + PRICE_B * b;
     }
-}
 
-void solve(machine_t *m)
-{
-    float det = (m->a_x * m->b_y) - (m->b_x * m->a_y);
-    float det_aug = m->a_x * m->t_y - m->t_x * m->a_y;
-    
-
-    printf("det: %f\n", det);
-
-    if (det != 0) {
-        // Case 1: Only one possible solution
-        m->b_x /= m->a_x;
-        m->t_x /= m->a_x;
-        m->a_x = 1;
-
-        m->b_y -= m->b_x * m->a_y;
-        m->t_y -= m->t_x * m->a_y;
-        m->a_y = 0;
-
-        m->t_y /= m->b_y;
-        m->b_y = 1;
-
-        m->t_x -= m->t_y * m->b_x;
-        m->b_x = 0;
-    } else if (det_aug == 0 && (int) m->t_x % gcd(m->a_x, m->b_x) != 0) {
-        printf("no valid solutions\n");
-        // Case 2: No valid solutions
-    } else {
-        printf("lde\n");
-        print_machine(m);
-        // Case 3: Many possible solutions, but only one is optimal
-
-        float A0, B0;
-        lde(m->a_x, m->b_x, m->t_x, &A0, &B0);
-        
-        float k1, k2, k;
-        k1 = ceil(-A0 / m->b_x);
-        k2 = floor(B0 / m->a_x);
-
-        if (m->a_x / m->b_x > 3) {
-            if (k1 > k2) {
-                k = k1;
-            } else {
-                k = k2;
-            }
-        } else {
-            if (k1 < k2) {
-                k = k1;
-            } else {
-                k = k2;
-            }
-        }
-
-        m->t_x = A0 + k * m->b_x;
-        m->t_y = B0 - k * m->a_x;
-    }
+    return -1;
 }
 
 int solve_bruteforce(machine_t *m)
@@ -129,22 +49,19 @@ int solve_bruteforce(machine_t *m)
     }
 }
 
-int sum_moves(FILE *file)
+mat_t sum_moves(FILE *file, unsigned long target_offset)
 {
-    int num_machines = count_lines(file) / 4;
-    int sum = 0;
+    mat_t sum = 0;
     machine_t *m = malloc(sizeof(machine_t));
 
-    for (int i = 0; i < num_machines; i++) {
+    while (!feof(file)) {
         get_next_machine(file, m);
-        int tokens = solve_bruteforce(m);
+        m->t_x += target_offset;
+        m->t_y += target_offset;
+        mat_t tokens = solve(m);
         if (tokens > 0) {
             sum += tokens;
         }
-
-        /*if (m->t_x - (int)m->t_x == 0 && m->t_y - (int)m->t_y == 0) {*/
-        /*    sum += m->t_x * PRICE_A + m->t_y * PRICE_B;*/
-        /*}*/
     }
 
     free(m);
@@ -156,9 +73,14 @@ int solve_day13(const char *input)
     FILE *file = fopen(input, "r");
     Perf *p = perf_init();
     int t_1 = timer_start("Part 1", p);
-    int sum = sum_moves(file);
+    int sum = sum_moves(file, 0);
     timer_stop(t_1, p);
     printf("Part 1: %i\n", sum);
+    fclose(file);
+    file = fopen(input, "r");
+    timer_start("Part 2", p);
+    mat_t sum2 = sum_moves(file, 10000000000000);
+    printf("Part 2: %ld\n", sum2);
     perf_report(p);
     perf_close(p);
     fclose(file);

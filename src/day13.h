@@ -5,10 +5,10 @@
 #include <sys/types.h>
 #include <stdio.h>
 
-typedef float mat_t;
-#define LINE1 "Button A: X+%f, Y+%f\n"
-#define LINE2 "Button B: X+%f, Y+%f\n"
-#define LINET "Prize: X=%f, Y=%f\n"
+typedef long mat_t;
+#define LINE1 "Button A: X+%ld, Y+%ld\n"
+#define LINE2 "Button B: X+%ld, Y+%ld\n"
+#define LINET "Prize: X=%ld, Y=%ld\n\n"
 #define EPS 0.001
 #define PRICE_A 3
 #define PRICE_B 1
@@ -24,7 +24,7 @@ typedef struct {
 
 int solve_day13(const char *input);
 void get_next_machine(FILE *file, machine_t *m);
-void solve(machine_t *m);
-int sum_moves(FILE *file);
+mat_t solve(machine_t *m);
+mat_t sum_moves(FILE *file, unsigned long target_offset);
 
 #endif

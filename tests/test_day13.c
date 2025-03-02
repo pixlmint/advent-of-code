@@ -44,10 +44,9 @@ static void test_solve_first(void **state)
     machine_t *first = malloc(sizeof(machine_t));
     get_next_machine(file, first);
 
-    solve(first);
+    long val = solve(first);
 
-    assert_float_equal(first->t_x, 80, EPS);
-    assert_float_equal(first->t_y, 40, EPS);
+    assert_int_equal(80 * 3 + 40, val);
 
     free(file);
     free(first);
@@ -58,10 +57,9 @@ static void test_sum_moves(void **state)
     const char *path = "tests/test_day13_input.txt";
     FILE *file = fopen(path, "r");
 
-    int sum = sum_moves(file);
+    int sum = sum_moves(file, 0);
 
     assert_int_equal(sum, 480);
-
 }
 
 int main() {
