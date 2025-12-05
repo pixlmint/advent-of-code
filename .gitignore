@@ -1,4 +1,8 @@
-bin/*
+**/bin/*
+**/obj/*
+*.user
+*.lock.json
+output/
 compile_commands.json
 .cache/*
 input/*

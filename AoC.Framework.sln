@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AoC.CLI", "AoC.CLI\AoC.CLI.csproj", "{902D0980-D443-4771-896F-4447622A3651}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AoC.Framework", "AoC.Framework\AoC.Framework.csproj", "{485802F6-21C8-486A-870C-650A225E7107}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{902D0980-D443-4771-896F-4447622A3651}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{902D0980-D443-4771-896F-4447622A3651}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{902D0980-D443-4771-896F-4447622A3651}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{902D0980-D443-4771-896F-4447622A3651}.Release|Any CPU.Build.0 = Release|Any CPU
+		{485802F6-21C8-486A-870C-650A225E7107}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{485802F6-21C8-486A-870C-650A225E7107}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{485802F6-21C8-486A-870C-650A225E7107}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{485802F6-21C8-486A-870C-650A225E7107}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
