@@ -1,0 +1,42 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "elf:status",
+            "command": "uv",
+            "args": ["run", "elf", "status"],
+            "presentation": {
+                "reveal": "always"
+            },
+            "type": "shell"
+        },
+        {
+            "label": "create",
+            "command": "touch",
+            "args": ["src/day_${input:day}.py"],
+            "type": "shell"
+        },
+        {
+            "label": "elf:input",
+            "command": "bash",
+            "args": ["-c", "uv run elf input ${env:AOC_YEAR} ${input:day} > input/day_${input:day}.txt"],
+            "type": "shell"
+        },
+        {
+            "label": "elf:open",
+            "command": "uv",
+            "args": ["run", "elf", "open"],
+            "type": "shell"
+        },
+        {
+            "label": "setup",
+            "dependsOn": ["create", "elf:input"]
+        }
+    ],
+    "inputs": [
+        {
+            "id": "day",
+            "type": "promptString"
+        }
+    ]
+}
